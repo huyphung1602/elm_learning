@@ -8,6 +8,12 @@ import Html.Events exposing (onClick, onInput, onSubmit)
 import Json.Decode exposing (Decoder, bool, int, list, string, succeed)
 import Json.Decode.Pipeline exposing (hardcoded, required)
 import Http
+import WebSocket
+
+-- WebSocket
+wsUrl : String
+wsUrl =
+    "wss://programming-elm.com/"
 
 -- HTTP
 fetchFeed : Cmd Msg
@@ -69,6 +75,7 @@ type Msg
     | UpdateComment Id String
     | SaveComment Id
     | LoadFeed (Result Http.Error Feed)
+    | LoadStreamPhoto String
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -93,11 +100,17 @@ update msg model =
             )
         LoadFeed (Ok feed) ->
             ( { model | feed = Just feed }
-            , Cmd.none
+            , WebSocket.listen wsUrl
             )
         LoadFeed (Err error) ->
             ( { model | error = Just error }
             , Cmd.none )
+        LoadStreamPhoto data ->
+            let
+                _ =
+                    Debug.log "WebSocket data" data
+            in
+            ( model, Cmd.none )
 
 -- UPDATE FEED
 updateFeed : (Photo -> Photo) -> Id -> Maybe Feed -> Maybe Feed
@@ -242,7 +255,7 @@ viewCommentList comments =
 -- SUBSCRIPTIONS
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    WebSocket.receive LoadStreamPhoto
 
 -- MAIN
 main : Program () Model Msg
