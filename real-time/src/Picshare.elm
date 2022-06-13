@@ -95,7 +95,7 @@ update msg model =
             ( { model | feed = Just feed }
             , Cmd.none
             )
-        LoadFeed (Err _) ->
+        LoadFeed (Err error) ->
             ( { model | error = Just error }
             , Cmd.none )
 
