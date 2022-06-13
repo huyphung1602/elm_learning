@@ -50,11 +50,14 @@ type alias Photo =
 
 type alias Model =
     { feed : Maybe Feed
+    , error : Maybe Http.Error
     }
 
 initialModel : Model
 initialModel =
-    { feed = Nothing }
+    { feed = Nothing
+    , error = Nothing
+    }
 
 init : () -> (Model, Cmd Msg)
 init _ =
@@ -93,7 +96,8 @@ update msg model =
             , Cmd.none
             )
         LoadFeed (Err _) ->
-            ( model, Cmd.none )
+            ( { model | error = Just error }
+            , Cmd.none )
 
 -- UPDATE FEED
 updateFeed : (Photo -> Photo) -> Id -> Maybe Feed -> Maybe Feed
@@ -142,8 +146,28 @@ view model =
         [ div [ class "header" ]
             [ h1 [] [ text "Picshare" ] ]
         , div [ class "content-flow" ]
-            [ viewFeed model.feed ]
+            [ viewContent model ]
         ]
+
+viewContent : Model -> Html Msg
+viewContent model =
+    case model.error of
+        Just error ->
+            div [ class "feed-error" ]
+                [text (errorMessage error)]
+        Nothing ->
+            viewFeed model.feed
+
+errorMessage : Http.Error -> String
+errorMessage error =
+    case error of
+        -- BadBody is the error that Elm uses when JSON decoding fails
+        Http.BadBody _ ->
+            """Sorry, we couldn't process your feed at this time.
+            We're working on it!"""
+        _ ->
+            """Sorry, we couldn't load your feed at this time.
+            Please try again later."""
 
 viewFeed : Maybe Feed -> Html Msg
 viewFeed maybeFeed =
